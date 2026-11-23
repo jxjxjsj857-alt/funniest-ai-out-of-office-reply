@@ -28,6 +28,9 @@ const OUTPUT_PATH = process.env.ENTRY_OUTPUT ?? "/output/entry.txt";
 const MIN_CHARS = 1;
 const MAX_CHARS = 160;
 
+// Count Unicode code points, not UTF-16 code units: an emoji (or any
+// astral character) is one character for the 160-character gate, even
+// though String.length would count it as two.
 function charCount(text: string): number {
   return [...text].length;
 }
@@ -93,6 +96,10 @@ function selfTest(): void {
     { text: "line one\nline two", ok: false, label: "two lines" },
     { text: "x".repeat(161), ok: false, label: "161 characters" },
     { text: "x".repeat(160), ok: true, label: "exactly 160 characters" },
+    // Decomposed "e" + combining acute accent is not NFC, so the gate
+    // must reject it even though it looks like one printable character.
+    { text: "café", ok: false, label: "non-NFC text" },
+    { text: "one line\r", ok: false, label: "trailing carriage return" },
   ];
   let failed = 0;
   for (const { text, ok, label } of cases) {
